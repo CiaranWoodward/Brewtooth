@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Brewtooth</string>
+    <string name="button_brew_text">Brew!</string>
+    <string name="text_water">Water</string>
+    <string name="text_coffee">Coffee</string>
+    <string name="text_milk">Milk</string>
+    <string name="text_strength">Strength</string>
+    <string name="text_volume">Volume</string>
+</resources>

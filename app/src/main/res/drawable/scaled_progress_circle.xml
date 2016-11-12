@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+    
+    <item>
+        <inset
+            android:drawable="@drawable/progress_circle"
+            android:inset="10dp" />
+    </item>
+
+</layer-list>
