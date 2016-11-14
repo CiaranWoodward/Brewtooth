@@ -26,6 +26,8 @@ public class BrewActivity extends AppCompatActivity {
     LinearLayout strengthLayout;
     LinearLayout volumeLayout;
 
+    boolean initialised = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,11 +49,14 @@ public class BrewActivity extends AppCompatActivity {
         brewButton = (Button) this.findViewById(R.id.button_brew);
 
         brewButton.setOnClickListener(mBrewButtonListener);
+        initialised = true;
     }
 
     private View.OnClickListener mBrewButtonListener = new View.OnClickListener() {
         public void onClick(View v) {
-            brewButton.setText("Success!");
+            if(initialised) {
+                brewButton.setText("Success!");
+            }
         }
     };
 }
