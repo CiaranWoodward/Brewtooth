@@ -6,4 +6,11 @@
     <string name="text_milk">Milk</string>
     <string name="text_strength">Strength</string>
     <string name="text_volume">Volume</string>
+
+    <string name="text_name">Name: </string>
+    <string name="text_location">Location: </string>
+    <string name="text_caps">Capabilities: </string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
