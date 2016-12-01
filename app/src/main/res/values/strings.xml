@@ -4,7 +4,8 @@
     <string name="text_water">Water</string>
     <string name="text_coffee">Coffee</string>
     <string name="text_milk">Milk</string>
-    <string name="text_strength">Strength</string>
+    <string name="text_froth">Froth</string>
+    <string name="text_strength">Coffee Strength</string>
     <string name="text_volume">Volume</string>
 
     <string name="text_name">Name: </string>

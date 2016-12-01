@@ -168,7 +168,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:visibility="visible"
-                    android:id="@+id/layout_strength">
+                    android:id="@+id/layout_coffee_choice">
 
                     <TextView
                         android:text="@string/text_strength"
@@ -179,7 +179,7 @@
                     <SeekBar
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:id="@+id/seekBar_strength"
+                        android:id="@+id/seekBar_coffee"
                         android:max="100"
                         android:progress="50"
                         android:thumbTint="@color/colorPrimaryDark"
@@ -198,7 +198,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:visibility="visible"
-                    android:id="@+id/layout_volume">
+                    android:id="@+id/layout_water_choice">
 
                     <TextView
                         android:text="@string/text_water"
@@ -209,7 +209,7 @@
                     <SeekBar
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:id="@+id/seekBar_volume"
+                        android:id="@+id/seekBar_water"
                         android:max="100"
                         android:progress="50"
                         android:thumbTint="@color/colorPrimaryDark"
@@ -239,6 +239,35 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:id="@+id/seekBar_milk"
+                        android:max="100"
+                        android:progress="50"
+                        android:thumbTint="@color/colorPrimaryDark"
+                        android:progressTint="@color/colorPrimary" />
+
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="visible"
+                    android:id="@+id/layout_froth_choice">
+
+                    <TextView
+                        android:text="@string/text_froth"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/textView7" />
+
+                    <SeekBar
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/seekBar_froth"
                         android:max="100"
                         android:progress="50"
                         android:thumbTint="@color/colorPrimaryDark"

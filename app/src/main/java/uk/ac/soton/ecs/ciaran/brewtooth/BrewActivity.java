@@ -20,11 +20,15 @@ public class BrewActivity extends AppCompatActivity {
 
     Button brewButton;
 
-    SeekBar strengthBar;
-    SeekBar volumeBar;
+    SeekBar coffeeSlide;
+    SeekBar waterSlide;
+    SeekBar milkSlide;
+    SeekBar frothSlide;
 
-    LinearLayout strengthLayout;
-    LinearLayout volumeLayout;
+    LinearLayout coffeeSlideLayout;
+    LinearLayout waterSlideLayout;
+    LinearLayout milkSlideLayout;
+    LinearLayout frothSlideLayout;
 
     boolean initialised = false;
 
@@ -37,14 +41,19 @@ public class BrewActivity extends AppCompatActivity {
         waterLayout = (LinearLayout) this.findViewById(R.id.layout_water);
         coffeeLayout = (LinearLayout) this.findViewById(R.id.layout_coffee);
         milkLayout = (LinearLayout) this.findViewById(R.id.layout_milk);
-        strengthLayout = (LinearLayout) this.findViewById(R.id.layout_strength);
-        volumeLayout = (LinearLayout) this.findViewById(R.id.layout_volume);
+        coffeeSlideLayout = (LinearLayout) this.findViewById(R.id.layout_coffee_choice);
+        waterSlideLayout = (LinearLayout) this.findViewById(R.id.layout_water_choice);
+        milkSlideLayout = (LinearLayout) this.findViewById(R.id.layout_milk_choice);
+        frothSlideLayout = (LinearLayout) this.findViewById(R.id.layout_froth_choice);
 
         waterBar = (ProgressBar) waterLayout.findViewById(R.id.progressBar_water);
         coffeeBar = (ProgressBar) coffeeLayout.findViewById(R.id.progressBar_coffee);
         milkBar = (ProgressBar) milkLayout.findViewById(R.id.progressBar_milk);
-        strengthBar = (SeekBar) strengthLayout.findViewById(R.id.seekBar_strength);
-        volumeBar = (SeekBar) volumeLayout.findViewById(R.id.seekBar_volume);
+
+        coffeeSlide = (SeekBar) coffeeSlideLayout.findViewById(R.id.seekBar_coffee);
+        waterSlide = (SeekBar) waterSlideLayout.findViewById(R.id.seekBar_water);
+        milkSlide = (SeekBar) coffeeSlideLayout.findViewById(R.id.seekBar_milk);
+        frothSlide = (SeekBar) waterSlideLayout.findViewById(R.id.seekBar_froth);
 
         brewButton = (Button) this.findViewById(R.id.button_brew);
 
