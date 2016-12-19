@@ -122,6 +122,9 @@ public class DeviceList extends AppCompatActivity {
     }
 
     private void queryServers(){
+        test.clear();
+        adapter.notifyDataSetChanged();
+        
         new Thread(new Runnable() {
             public void run() {
                 for (BluetoothDevice device : brewtoothServers) {
