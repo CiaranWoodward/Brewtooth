@@ -18,6 +18,7 @@ import android.widget.ListView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,6 +41,7 @@ public class DeviceList extends AppCompatActivity {
 
     final int REQUEST_ENABLE_BT = 1;
     private ArrayList<BrewMachine> test = new ArrayList<BrewMachine>();
+    BrewMachineAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +64,7 @@ public class DeviceList extends AppCompatActivity {
         test.get(2).name = "Filter machine";
         test.get(2).location = "Kitchen";
 
-        BrewMachineAdapter adapter = new BrewMachineAdapter(this, test);
+        adapter = new BrewMachineAdapter(this, test);
 
         listView = (ListView)findViewById(R.id.listview_devices);
         listView.setAdapter(adapter);
@@ -80,6 +83,7 @@ public class DeviceList extends AppCompatActivity {
 
         //First Get paired devices
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        brewtoothServers = new HashSet<BluetoothDevice>();
         // If there are paired devices
         if (pairedDevices.size() > 0) {
             // Loop through paired devices
@@ -125,26 +129,44 @@ public class DeviceList extends AppCompatActivity {
                     BluetoothSocket tmp = null;
 
                     try {
-                        tmp = device.createRfcommSocketToServiceRecord(UUID.fromString("NULL"));
+                        tmp = device.createRfcommSocketToServiceRecord(UUID.fromString("52993379-2ab4-4b4f-9bce-535bc1324c85"));
                         tmp.connect();
 
                         InputStream tmpi = tmp.getInputStream();
                         OutputStream tmpo = tmp.getOutputStream();
                         int machineCount = 0;
 
-                        BufferedReader streamReader = new BufferedReader(new InputStreamReader(tmpi, "UTF-8"));
+                        byte[] buffer = new byte[1024];  // buffer store for the stream
+                        int bytes; // bytes returned from read()
 
                         try {
-                            StringBuilder responseStrBuilder = new StringBuilder();
+                            JSONObject request = new JSONObject();
+                            request.put("Request", "CAPABILITIES");
+                            tmpo.write(request.toString().getBytes());
+                        }
+                        catch (JSONException e){
+                            e.printStackTrace(); //All data is hardcoded, this should never happen...
+                        }
 
-                            String inputStr;
-                            while ((inputStr = streamReader.readLine()) != null)
-                                responseStrBuilder.append(inputStr);
+                        bytes = tmpi.read(buffer);
+                        String inputStr = new String(buffer, 0, bytes);
+                        JSONTokener tokener = new JSONTokener(inputStr);
 
-                            JSONObject jsonObject = new JSONObject(responseStrBuilder.toString());
+                        try {
+                            JSONObject jsonObject;
 
-                            if(jsonObject.getString("Notify").equals("MACHINES")){
-                                machineCount = jsonObject.getInt("Level");
+                            if(tokener.more()){
+                                jsonObject = (JSONObject) tokener.nextValue();
+                            }
+                            else{
+                                bytes = tmpi.read(buffer);
+                                inputStr = new String(buffer, 0, bytes);
+                                tokener = new JSONTokener(inputStr);
+                                jsonObject = (JSONObject) tokener.nextValue();
+                            }
+
+                            if(jsonObject.getString("Response").equals("MACHINES")){
+                                machineCount = jsonObject.getInt("Quantity");
                             }
 
                         } catch (IOException e) {
@@ -155,19 +177,24 @@ public class DeviceList extends AppCompatActivity {
 
                         for(int i = 0; i < machineCount; i++) {
                             try {
-                                StringBuilder responseStrBuilder = new StringBuilder();
+                                JSONObject jsonObject;
 
-                                String inputStr;
-                                while ((inputStr = streamReader.readLine()) != null)
-                                    responseStrBuilder.append(inputStr);
+                                if(tokener.more()) {
+                                    jsonObject = (JSONObject) tokener.nextValue();
+                                }
+                                else{
+                                    bytes = tmpi.read(buffer);
+                                    inputStr = new String(buffer, 0, bytes);
+                                    tokener = new JSONTokener(inputStr);
+                                    jsonObject = (JSONObject) tokener.nextValue();
+                                }
 
-                                JSONObject jsonObject = new JSONObject(responseStrBuilder.toString());
-                                if (jsonObject.getString("Notify").equals("MACHINE_DETAILS")) {
+                                if (jsonObject.getString("Response").equals("MACHINE_DETAILS")) {
 
                                     final BrewMachine brewMachine = new BrewMachine();
-                                    brewMachine.name = "Unnamed";
-                                    brewMachine.location = "Somewhere nearby";
-                                    brewMachine.capabilities = jsonObject.getString("Comments");
+                                    brewMachine.name = jsonObject.getString("Name");
+                                    brewMachine.location = jsonObject.getString("Location");
+                                    brewMachine.capabilities = jsonObject.getString("Function");
                                     brewMachine.mBluetoothDevice = device;
                                     brewMachine.deviceID = jsonObject.getInt("Machine");
 
@@ -175,6 +202,7 @@ public class DeviceList extends AppCompatActivity {
                                         @Override
                                         public void run() {
                                             test.add(brewMachine);
+                                            adapter.notifyDataSetChanged();
                                         }
                                     });
                                 }
@@ -224,6 +252,7 @@ public class DeviceList extends AppCompatActivity {
         }
         else{
             startScan();
+            queryServers();
         }
     }
 }
