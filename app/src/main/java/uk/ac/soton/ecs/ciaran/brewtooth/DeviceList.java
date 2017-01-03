@@ -34,6 +34,8 @@ import static uk.ac.soton.ecs.ciaran.brewtooth.R.styleable.View;
 
 public class DeviceList extends AppCompatActivity {
 
+    public static BrewMachine curBrewMachine;
+
     private ListView listView;
     BluetoothAdapter mBluetoothAdapter;
 
@@ -73,6 +75,7 @@ public class DeviceList extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapter, View view, int position, long arg) {
                 Intent appInfo = new Intent(DeviceList.this, BrewActivity.class);
+                curBrewMachine = test.get(position);
                 startActivity(appInfo);
             }
         });
@@ -124,7 +127,7 @@ public class DeviceList extends AppCompatActivity {
     private void queryServers(){
         test.clear();
         adapter.notifyDataSetChanged();
-        
+
         new Thread(new Runnable() {
             public void run() {
                 for (BluetoothDevice device : brewtoothServers) {

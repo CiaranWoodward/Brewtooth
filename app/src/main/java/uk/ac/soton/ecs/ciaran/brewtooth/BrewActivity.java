@@ -1,5 +1,6 @@
 package uk.ac.soton.ecs.ciaran.brewtooth;
 
+import android.bluetooth.BluetoothSocket;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -7,6 +8,14 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.UUID;
 
 public class BrewActivity extends AppCompatActivity {
 
@@ -30,6 +39,11 @@ public class BrewActivity extends AppCompatActivity {
     LinearLayout milkSlideLayout;
     LinearLayout frothSlideLayout;
 
+    BrewMachine mBrewMachine;
+    BluetoothSocket mSocket;
+    InputStream inStr;
+    OutputStream outStr;
+
     boolean initialised = false;
 
 
@@ -37,6 +51,19 @@ public class BrewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_brew);
+
+        mBrewMachine = DeviceList.curBrewMachine;
+        try {
+            mSocket = mBrewMachine.mBluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("52993379-2ab4-4b4f-9bce-535bc1324c85"));
+            mSocket.connect();
+
+            inStr = mSocket.getInputStream();
+            outStr = mSocket.getOutputStream();
+        }
+        catch (IOException e){
+            //TODO: Recover gracefully
+            e.printStackTrace();
+        }
 
         waterLayout = (LinearLayout) this.findViewById(R.id.layout_water);
         coffeeLayout = (LinearLayout) this.findViewById(R.id.layout_coffee);
@@ -64,7 +91,17 @@ public class BrewActivity extends AppCompatActivity {
     private View.OnClickListener mBrewButtonListener = new View.OnClickListener() {
         public void onClick(View v) {
             if(initialised) {
-                brewButton.setText("Success!");
+                try {
+                    JSONObject request = new JSONObject();
+                    request.put("Request", "MAKE_COFFEE");
+                    request.put("Machine", mBrewMachine.deviceID);
+                    outStr.write(request.toString().getBytes());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    //Should never happen, all hardcoded.
+                    return;
+                }
             }
         }
     };
