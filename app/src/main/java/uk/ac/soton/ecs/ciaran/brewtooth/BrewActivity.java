@@ -92,6 +92,38 @@ public class BrewActivity extends AppCompatActivity {
 
         brewButton.setOnClickListener(mBrewButtonListener);
         initialised = true;
+
+        sendFeatureListRequest();
+        sendLevelRequest();
+
+    }
+
+    private void sendFeatureListRequest(){
+        try {
+            JSONObject request = new JSONObject();
+            request.put("Request", "FEATURE_LIST");
+            request.put("Machine", mBrewMachine.deviceID);
+            outStr.write(request.toString().getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            //Should never happen, all hardcoded.
+            return;
+        }
+    }
+
+    private void sendLevelRequest(){
+        try {
+            JSONObject request = new JSONObject();
+            request.put("Request", "LEVELS");
+            request.put("Machine", mBrewMachine.deviceID);
+            outStr.write(request.toString().getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            //Should never happen, all hardcoded.
+            return;
+        }
     }
 
     private View.OnClickListener mBrewButtonListener = new View.OnClickListener() {
