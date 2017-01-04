@@ -64,7 +64,7 @@ public class BrewActivity extends AppCompatActivity {
             outStr = mSocket.getOutputStream();
 
             mReader = new readerThread(inStr);
-            new Thread(mReader);
+            new Thread(mReader).start();
         }
         catch (IOException e){
             //TODO: Recover gracefully
