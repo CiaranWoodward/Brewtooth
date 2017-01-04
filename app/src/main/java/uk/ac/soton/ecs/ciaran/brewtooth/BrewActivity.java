@@ -253,6 +253,13 @@ public class BrewActivity extends AppCompatActivity {
 
                     final JSONObject passObj = jsonObject;
                     try {
+
+                        if(jsonObject.has("Machine")){
+                            if((jsonObject.getInt("Machine") != mBrewMachine.deviceID)){
+                                continue;   //Not relevant
+                            }
+                        }
+
                         if(jsonObject.has("Response")) {
                             if (jsonObject.getString("Response").equals("COFFEE_START")) {
                                 runOnUiThread(new Runnable() {
