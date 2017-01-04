@@ -11,6 +11,7 @@ import android.widget.SeekBar;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +47,8 @@ public class BrewActivity extends AppCompatActivity {
 
     boolean initialised = false;
 
+    readerThread mReader;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +62,9 @@ public class BrewActivity extends AppCompatActivity {
 
             inStr = mSocket.getInputStream();
             outStr = mSocket.getOutputStream();
+
+            mReader = new readerThread(inStr);
+            new Thread(mReader);
         }
         catch (IOException e){
             //TODO: Recover gracefully
@@ -105,4 +111,189 @@ public class BrewActivity extends AppCompatActivity {
             }
         }
     };
+
+    void processCoffeeDone(JSONObject jsonObj) throws JSONException{
+        brewButton.setText(R.string.button_brew_text);
+
+        if(jsonObj.has("Milk")){
+            milkBar.setProgress(jsonObj.getInt("Milk"));
+        }
+
+        if(jsonObj.has("Water")){
+            milkBar.setProgress(jsonObj.getInt("Water"));
+        }
+
+        if(jsonObj.has("Coffee")){
+            milkBar.setProgress(jsonObj.getInt("Coffee"));
+        }
+    }
+
+    void processStatus(JSONObject jsonObj) throws JSONException{
+        String status = jsonObj.getString("StatusCode");
+
+        if(status.equals("READY")){
+            brewButton.setEnabled(true);
+            brewButton.setText(R.string.button_brew_text);
+        }
+        else if(status.equals("NO_CUP")){
+            brewButton.setEnabled(false);
+            brewButton.setText(R.string.button_brew_nocup_text);
+        }
+        else if(status.equals("CLEAN_ME")){
+            brewButton.setEnabled(false);
+            brewButton.setText(R.string.button_brew_cleanme_text);
+        }
+        else if(status.equals("MAINTAIN")){
+            brewButton.setEnabled(false);
+            brewButton.setText(R.string.button_brew_maintain_text);
+        }
+    }
+
+    private void processShowHide(JSONObject jsonObj, String name, View view) throws  JSONException{
+        if(jsonObj.has(name) && jsonObj.getString(name).equals("YES")){
+            view.setVisibility(View.VISIBLE);
+        }
+        else{
+            view.setVisibility(View.GONE);
+        }
+    }
+
+    void processFeatureList(JSONObject jsonObj) throws JSONException{
+
+        processShowHide(jsonObj, "MilkLevel", milkBar);
+        processShowHide(jsonObj, "CoffeeLevel", coffeeBar);
+        processShowHide(jsonObj, "WaterLevel", waterBar);
+        processShowHide(jsonObj, "StrengthParam", coffeeSlide);
+        processShowHide(jsonObj, "WaterParam", waterSlide);
+        processShowHide(jsonObj, "MilkParam", milkSlide);
+        processShowHide(jsonObj, "FrothParam", frothSlide);
+
+    }
+
+    void processLevels(JSONObject jsonObj) throws JSONException{
+        if(jsonObj.has("Milk")){
+            milkBar.setProgress(jsonObj.getInt("Milk"));
+        }
+
+        if(jsonObj.has("Water")){
+            milkBar.setProgress(jsonObj.getInt("Water"));
+        }
+
+        if(jsonObj.has("Coffee")){
+            milkBar.setProgress(jsonObj.getInt("Coffee"));
+        }
+    }
+
+    private class readerThread implements Runnable{
+
+        private InputStream in;
+
+        public readerThread(InputStream in){
+            this.in = in;
+        }
+
+        @Override
+        public void run(){
+
+            while(true) {
+                byte[] buffer = new byte[1024];  // buffer store for the stream
+                int bytes; // bytes returned from read()
+                JSONObject jsonObject;
+
+                try {
+                    bytes = in.read(buffer);
+                    String inputStr = new String(buffer, 0, bytes);
+                    JSONTokener tokener = new JSONTokener(inputStr);
+
+                    try {
+                        if (tokener.more()) {
+                            jsonObject = (JSONObject) tokener.nextValue();
+                        } else {
+                            bytes = in.read(buffer);
+                            inputStr = new String(buffer, 0, bytes);
+                            tokener = new JSONTokener(inputStr);
+                            jsonObject = (JSONObject) tokener.nextValue();
+                        }
+                    } catch (JSONException e) {
+                        continue; //Ignore invalid input
+                        //TODO: Recover the invalid string into the next jsontokener input (This might not be necessary)
+                    }
+
+                    final JSONObject passObj = jsonObject;
+                    try {
+                        if(jsonObject.has("Response")) {
+                            if (jsonObject.getString("Response").equals("COFFEE_START")) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        brewButton.setText(R.string.button_brew_brewing_text);
+                                    }
+                                });
+                            }
+                            else if (jsonObject.getString("Response").equals("FEATURE_LIST")) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            processFeatureList(passObj);
+                                        }
+                                        catch (JSONException e){
+                                            return; //non critical -> ignore and continue
+                                        }
+                                    }
+                                });
+                            }
+                            else if (jsonObject.getString("Response").equals("LEVELS")) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            processLevels(passObj);
+                                        }
+                                        catch (JSONException e){
+                                            return; //non critical -> ignore and continue
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                        else if(jsonObject.has("Notify")){
+                            if (jsonObject.getString("Notify").equals("COFFEE_DONE")) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            processCoffeeDone(passObj);
+                                        }
+                                        catch (JSONException e){
+                                            return; //non critical -> ignore and continue
+                                        }
+                                    }
+                                });
+                            }
+                            else if (jsonObject.getString("Notify").equals("STATUS")) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            processStatus(passObj);
+                                        }
+                                        catch (JSONException e){
+                                            return; //non critical -> ignore and continue
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    catch(JSONException e){
+                        continue; //Ignore invalid JSON
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }
