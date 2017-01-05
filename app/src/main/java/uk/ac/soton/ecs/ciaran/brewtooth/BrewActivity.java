@@ -85,8 +85,8 @@ public class BrewActivity extends AppCompatActivity {
 
         coffeeSlide = (SeekBar) coffeeSlideLayout.findViewById(R.id.seekBar_coffee);
         waterSlide = (SeekBar) waterSlideLayout.findViewById(R.id.seekBar_water);
-        milkSlide = (SeekBar) coffeeSlideLayout.findViewById(R.id.seekBar_milk);
-        frothSlide = (SeekBar) waterSlideLayout.findViewById(R.id.seekBar_froth);
+        milkSlide = (SeekBar) milkSlideLayout.findViewById(R.id.seekBar_milk);
+        frothSlide = (SeekBar) frothSlideLayout.findViewById(R.id.seekBar_froth);
 
         brewButton = (Button) this.findViewById(R.id.button_brew);
 
@@ -192,13 +192,13 @@ public class BrewActivity extends AppCompatActivity {
 
     void processFeatureList(JSONObject jsonObj) throws JSONException{
 
-        processShowHide(jsonObj, "MilkLevel", milkBar);
-        processShowHide(jsonObj, "CoffeeLevel", coffeeBar);
-        processShowHide(jsonObj, "WaterLevel", waterBar);
-        processShowHide(jsonObj, "StrengthParam", coffeeSlide);
-        processShowHide(jsonObj, "WaterParam", waterSlide);
-        processShowHide(jsonObj, "MilkParam", milkSlide);
-        processShowHide(jsonObj, "FrothParam", frothSlide);
+        processShowHide(jsonObj, "MilkLevel", milkLayout);
+        processShowHide(jsonObj, "CoffeeLevel", coffeeLayout);
+        processShowHide(jsonObj, "WaterLevel", waterLayout);
+        processShowHide(jsonObj, "StrengthParam", coffeeSlideLayout);
+        processShowHide(jsonObj, "WaterParam", waterSlideLayout);
+        processShowHide(jsonObj, "MilkParam", milkSlideLayout);
+        processShowHide(jsonObj, "FrothParam", frothSlideLayout);
 
     }
 
@@ -208,11 +208,11 @@ public class BrewActivity extends AppCompatActivity {
         }
 
         if(jsonObj.has("Water")){
-            milkBar.setProgress(jsonObj.getInt("Water"));
+            waterBar.setProgress(jsonObj.getInt("Water"));
         }
 
         if(jsonObj.has("Coffee")){
-            milkBar.setProgress(jsonObj.getInt("Coffee"));
+            coffeeBar.setProgress(jsonObj.getInt("Coffee"));
         }
     }
 
