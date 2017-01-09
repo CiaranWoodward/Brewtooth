@@ -234,7 +234,7 @@ public class BrewActivity extends AppCompatActivity {
 
     void processCoffeeStart(JSONObject jsonObj) throws JSONException{
         brewButton.setEnabled(false); //Disable button until coffee is done
-        if(jsonObj.getString("Status").equals("Success")) {
+        if(jsonObj.getString("Status").equals("SUCCESS")) {
             brewButton.setText(R.string.button_brew_brewing_text);
         }
         else{
