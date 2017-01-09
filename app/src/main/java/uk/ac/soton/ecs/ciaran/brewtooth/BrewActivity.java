@@ -151,6 +151,7 @@ public class BrewActivity extends AppCompatActivity {
     };
 
     void processCoffeeDone(JSONObject jsonObj) throws JSONException{
+        brewButton.setEnabled(true);
         brewButton.setText(R.string.button_brew_text);
 
         processLevels(jsonObj);
