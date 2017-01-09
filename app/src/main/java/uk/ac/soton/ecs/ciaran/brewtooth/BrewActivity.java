@@ -156,11 +156,11 @@ public class BrewActivity extends AppCompatActivity {
         }
 
         if(jsonObj.has("Water")){
-            milkBar.setProgress(jsonObj.getInt("Water"));
+            waterBar.setProgress(jsonObj.getInt("Water"));
         }
 
         if(jsonObj.has("Coffee")){
-            milkBar.setProgress(jsonObj.getInt("Coffee"));
+            coffeeBar.setProgress(jsonObj.getInt("Coffee"));
         }
     }
 
