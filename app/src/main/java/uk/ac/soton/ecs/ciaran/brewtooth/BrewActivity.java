@@ -133,6 +133,10 @@ public class BrewActivity extends AppCompatActivity {
                     JSONObject request = new JSONObject();
                     request.put("Request", "MAKE_COFFEE");
                     request.put("Machine", mBrewMachine.deviceID);
+                    if(coffeeSlideLayout.getVisibility() == View.VISIBLE) request.put("Strength", coffeeSlide.getProgress());
+                    if(waterSlideLayout.getVisibility() == View.VISIBLE) request.put("Water", waterSlide.getProgress());
+                    if(milkSlideLayout.getVisibility() == View.VISIBLE) request.put("Milk", milkSlide.getProgress());
+                    if(frothSlideLayout.getVisibility() == View.VISIBLE) request.put("Froth", frothSlide.getProgress());
                     outStr.write(request.toString().getBytes());
                 } catch (IOException e) {
                     e.printStackTrace();
