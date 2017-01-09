@@ -2,8 +2,11 @@
     <string name="app_name">Brewtooth</string>
     <string name="button_brew_text">Brew!</string>
     <string name="button_brew_brewing_text">Brewing...</string>
+    <string name="button_brew_fail_text">Failed.</string>
     <string name="button_brew_nocup_text">No Cup!</string>
-    <string name="button_brew_refillme_text">Refill Me!</string>
+    <string name="button_brew_refillmilk_text">Refill Milk!</string>
+    <string name="button_brew_refillwater_text">Refill Water!</string>
+    <string name="button_brew_refillcoffee_text">Refill Coffee!</string>
     <string name="button_brew_cleanme_text">Clean Me!</string>
     <string name="button_brew_maintain_text">Need Maintenance!</string>
     <string name="text_water">Water</string>

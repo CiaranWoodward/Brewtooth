@@ -175,6 +175,18 @@ public class BrewActivity extends AppCompatActivity {
             brewButton.setEnabled(false);
             brewButton.setText(R.string.button_brew_maintain_text);
         }
+        else if(status.equals("MORE_COFFEE")){
+            brewButton.setEnabled(false);
+            brewButton.setText(R.string.button_brew_refillcoffee_text);
+        }
+        else if(status.equals("MORE_MILK")){
+            brewButton.setEnabled(false);
+            brewButton.setText(R.string.button_brew_refillmilk_text);
+        }
+        else if(status.equals("MORE_WATER")){
+            brewButton.setEnabled(false);
+            brewButton.setText(R.string.button_brew_refillwater_text);
+        }
     }
 
     private void processShowHide(JSONObject jsonObj, String name, View view) throws  JSONException{
@@ -219,6 +231,16 @@ public class BrewActivity extends AppCompatActivity {
         }
     }
 
+    void processCoffeeStart(JSONObject jsonObj) throws JSONException{
+        brewButton.setEnabled(false); //Disable button until coffee is done
+        if(jsonObj.getString("Status").equals("Success")) {
+            brewButton.setText(R.string.button_brew_brewing_text);
+        }
+        else{
+            brewButton.setText(R.string.button_brew_fail_text);
+        }
+    }
+
     private class readerThread implements Runnable{
 
         private InputStream in;
@@ -233,7 +255,7 @@ public class BrewActivity extends AppCompatActivity {
             while(true) {
                 byte[] buffer = new byte[1024];  // buffer store for the stream
                 int bytes; // bytes returned from read()
-                JSONObject jsonObject;
+                final JSONObject jsonObject;
 
                 try {
                     bytes = in.read(buffer);
@@ -268,7 +290,12 @@ public class BrewActivity extends AppCompatActivity {
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        brewButton.setText(R.string.button_brew_brewing_text);
+                                    try {
+                                        processCoffeeStart(passObj);
+                                    }
+                                    catch (JSONException e){
+                                        return; //non critical -> ignore and continue
+                                    }
                                     }
                                 });
                             }
