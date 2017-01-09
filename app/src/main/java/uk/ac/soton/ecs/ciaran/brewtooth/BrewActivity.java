@@ -1,9 +1,11 @@
 package uk.ac.soton.ecs.ciaran.brewtooth;
 
+import android.animation.ObjectAnimator;
 import android.bluetooth.BluetoothSocket;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -151,17 +153,7 @@ public class BrewActivity extends AppCompatActivity {
     void processCoffeeDone(JSONObject jsonObj) throws JSONException{
         brewButton.setText(R.string.button_brew_text);
 
-        if(jsonObj.has("Milk")){
-            milkBar.setProgress(jsonObj.getInt("Milk"));
-        }
-
-        if(jsonObj.has("Water")){
-            waterBar.setProgress(jsonObj.getInt("Water"));
-        }
-
-        if(jsonObj.has("Coffee")){
-            coffeeBar.setProgress(jsonObj.getInt("Coffee"));
-        }
+        processLevels(jsonObj);
     }
 
     void processStatus(JSONObject jsonObj) throws JSONException{
@@ -206,17 +198,24 @@ public class BrewActivity extends AppCompatActivity {
 
     }
 
+    void doLevelAnim(ProgressBar bar, int value){
+        ObjectAnimator anim = ObjectAnimator.ofInt(bar, "progress", bar.getProgress(), value);
+        anim.setDuration(500);
+        anim.setInterpolator(new DecelerateInterpolator());
+        anim.start();
+    }
+
     void processLevels(JSONObject jsonObj) throws JSONException{
         if(jsonObj.has("Milk")){
-            milkBar.setProgress(jsonObj.getInt("Milk"));
+            doLevelAnim(milkBar, jsonObj.getInt("Milk"));
         }
 
         if(jsonObj.has("Water")){
-            waterBar.setProgress(jsonObj.getInt("Water"));
+            doLevelAnim(waterBar, jsonObj.getInt("Water"));
         }
 
         if(jsonObj.has("Coffee")){
-            coffeeBar.setProgress(jsonObj.getInt("Coffee"));
+            doLevelAnim(coffeeBar, jsonObj.getInt("Coffee"));
         }
     }
 
