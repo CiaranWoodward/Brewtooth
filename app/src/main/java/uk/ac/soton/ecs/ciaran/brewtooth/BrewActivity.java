@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator;
 import android.bluetooth.BluetoothSocket;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
@@ -49,6 +50,7 @@ public class BrewActivity extends AppCompatActivity {
 
     boolean initialised = false;
 
+    Thread mWorker;
     readerThread mReader;
 
 
@@ -57,7 +59,36 @@ public class BrewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_brew);
 
+        if(!initialised) {
+            waterLayout = (LinearLayout) this.findViewById(R.id.layout_water);
+            coffeeLayout = (LinearLayout) this.findViewById(R.id.layout_coffee);
+            milkLayout = (LinearLayout) this.findViewById(R.id.layout_milk);
+            coffeeSlideLayout = (LinearLayout) this.findViewById(R.id.layout_coffee_choice);
+            waterSlideLayout = (LinearLayout) this.findViewById(R.id.layout_water_choice);
+            milkSlideLayout = (LinearLayout) this.findViewById(R.id.layout_milk_choice);
+            frothSlideLayout = (LinearLayout) this.findViewById(R.id.layout_froth_choice);
+
+            waterBar = (ProgressBar) waterLayout.findViewById(R.id.progressBar_water);
+            coffeeBar = (ProgressBar) coffeeLayout.findViewById(R.id.progressBar_coffee);
+            milkBar = (ProgressBar) milkLayout.findViewById(R.id.progressBar_milk);
+
+            coffeeSlide = (SeekBar) coffeeSlideLayout.findViewById(R.id.seekBar_coffee);
+            waterSlide = (SeekBar) waterSlideLayout.findViewById(R.id.seekBar_water);
+            milkSlide = (SeekBar) milkSlideLayout.findViewById(R.id.seekBar_milk);
+            frothSlide = (SeekBar) frothSlideLayout.findViewById(R.id.seekBar_froth);
+
+            brewButton = (Button) this.findViewById(R.id.button_brew);
+
+            brewButton.setOnClickListener(mBrewButtonListener);
+            initialised = true;
+        }
+
+    }
+
+    @Override
+    protected void onStart(){
         mBrewMachine = DeviceList.curBrewMachine;
+
         try {
             mSocket = mBrewMachine.mBluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("52993379-2ab4-4b4f-9bce-535bc1324c85"));
             mSocket.connect();
@@ -66,38 +97,28 @@ public class BrewActivity extends AppCompatActivity {
             outStr = mSocket.getOutputStream();
 
             mReader = new readerThread(inStr);
-            new Thread(mReader).start();
-        }
-        catch (IOException e){
+            mWorker = new Thread(mReader);
+            mWorker.start();
+        } catch (IOException e) {
             //TODO: Recover gracefully
             e.printStackTrace();
         }
 
-        waterLayout = (LinearLayout) this.findViewById(R.id.layout_water);
-        coffeeLayout = (LinearLayout) this.findViewById(R.id.layout_coffee);
-        milkLayout = (LinearLayout) this.findViewById(R.id.layout_milk);
-        coffeeSlideLayout = (LinearLayout) this.findViewById(R.id.layout_coffee_choice);
-        waterSlideLayout = (LinearLayout) this.findViewById(R.id.layout_water_choice);
-        milkSlideLayout = (LinearLayout) this.findViewById(R.id.layout_milk_choice);
-        frothSlideLayout = (LinearLayout) this.findViewById(R.id.layout_froth_choice);
-
-        waterBar = (ProgressBar) waterLayout.findViewById(R.id.progressBar_water);
-        coffeeBar = (ProgressBar) coffeeLayout.findViewById(R.id.progressBar_coffee);
-        milkBar = (ProgressBar) milkLayout.findViewById(R.id.progressBar_milk);
-
-        coffeeSlide = (SeekBar) coffeeSlideLayout.findViewById(R.id.seekBar_coffee);
-        waterSlide = (SeekBar) waterSlideLayout.findViewById(R.id.seekBar_water);
-        milkSlide = (SeekBar) milkSlideLayout.findViewById(R.id.seekBar_milk);
-        frothSlide = (SeekBar) frothSlideLayout.findViewById(R.id.seekBar_froth);
-
-        brewButton = (Button) this.findViewById(R.id.button_brew);
-
-        brewButton.setOnClickListener(mBrewButtonListener);
-        initialised = true;
-
         sendFeatureListRequest();
         sendLevelRequest();
+    }
 
+    @Override
+    protected void onStop(){
+        mWorker.interrupt();
+        try {
+            mSocket.close();
+            mReader = null;
+        }
+        catch (IOException e){
+            //How could this happen?
+            Log.e("Brewtooth", "Unable to close bluetooth socket");
+        }
     }
 
     private void sendFeatureListRequest(){
@@ -107,7 +128,8 @@ public class BrewActivity extends AppCompatActivity {
             request.put("Machine", mBrewMachine.deviceID);
             outStr.write(request.toString().getBytes());
         } catch (IOException e) {
-            e.printStackTrace();
+            //Output stream has probably been closed, not the end of the world, probably intentional, just move on
+            Log.w("Brewtooth", "outStr IOException raised");
         } catch (JSONException e) {
             //Should never happen, all hardcoded.
             return;
@@ -121,7 +143,8 @@ public class BrewActivity extends AppCompatActivity {
             request.put("Machine", mBrewMachine.deviceID);
             outStr.write(request.toString().getBytes());
         } catch (IOException e) {
-            e.printStackTrace();
+            //Output stream has probably been closed, not the end of the world, probably intentional, just move on
+            Log.w("Brewtooth", "outStr IOException raised");
         } catch (JSONException e) {
             //Should never happen, all hardcoded.
             return;
@@ -141,7 +164,8 @@ public class BrewActivity extends AppCompatActivity {
                     if(frothSlideLayout.getVisibility() == View.VISIBLE) request.put("Froth", frothSlide.getProgress());
                     outStr.write(request.toString().getBytes());
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    //Output stream has probably been closed, not the end of the world, probably intentional, just move on
+                    Log.w("Brewtooth", "outStr IOException raised");
                 } catch (JSONException e) {
                     //Should never happen, all hardcoded.
                     return;
@@ -253,7 +277,7 @@ public class BrewActivity extends AppCompatActivity {
         @Override
         public void run(){
 
-            while(true) {
+            while(!Thread.currentThread().isInterrupted()) {
                 byte[] buffer = new byte[1024];  // buffer store for the stream
                 int bytes; // bytes returned from read()
                 final JSONObject jsonObject;
@@ -360,8 +384,9 @@ public class BrewActivity extends AppCompatActivity {
                         continue; //Ignore invalid JSON
                     }
 
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (IOException e){
+                    //Thread interrupted or socket closed. end processing.
+                    return;
                 }
             }
         }

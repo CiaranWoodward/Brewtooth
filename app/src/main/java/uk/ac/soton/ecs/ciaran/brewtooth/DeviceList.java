@@ -50,22 +50,6 @@ public class DeviceList extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_list);
 
-        test.add(new BrewMachine());
-        test.add(new BrewMachine());
-        test.add(new BrewMachine());
-
-        test.get(0).capabilities = "Coffee, Water, Milk, Froth";
-        test.get(0).name = "Nespresso";
-        test.get(0).location = "Meeting Room";
-
-        test.get(1).capabilities = "Coffee, Water";
-        test.get(1).name = "Instant coffee machine";
-        test.get(1).location = "Atrium";
-
-        test.get(2).capabilities = "Coffee";
-        test.get(2).name = "Filter machine";
-        test.get(2).location = "Kitchen";
-
         adapter = new BrewMachineAdapter(this, test);
 
         listView = (ListView)findViewById(R.id.listview_devices);
@@ -92,7 +76,7 @@ public class DeviceList extends AppCompatActivity {
             // Loop through paired devices
             for (BluetoothDevice device : pairedDevices) {
 
-                //TODO: Filter out unwanted names
+                //Filter out unwanted names
 
                 if(device.getName().matches("^[Bb]rewtooth.*")){
                     brewtoothServers.add(device);
@@ -100,28 +84,6 @@ public class DeviceList extends AppCompatActivity {
             }
         }
 
-/*        final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                // When discovery finds a device
-                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    // Get the BluetoothDevice object from the Intent
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-
-                    //TODO: Filter out unwanted names
-                    BrewMachine brewMachine = new BrewMachine();
-                    brewMachine.name = device.getName();
-                    brewMachine.location = "The Ether";
-                    brewMachine.capabilities = "None";
-                    brewMachine.mBluetoothDevice = device;
-                    test.add(brewMachine);
-            }
-            }
-        };
-        // Register the BroadcastReceiver
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-        mBluetoothAdapter.startDiscovery();*/
     }
 
     private void queryServers(){
