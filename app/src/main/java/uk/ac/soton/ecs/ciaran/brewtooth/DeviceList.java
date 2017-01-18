@@ -3,16 +3,12 @@ package uk.ac.soton.ecs.ciaran.brewtooth;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.IntentFilter;
-import android.util.JsonReader;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
@@ -20,17 +16,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-
-import static uk.ac.soton.ecs.ciaran.brewtooth.R.styleable.View;
 
 public class DeviceList extends AppCompatActivity {
 
@@ -39,10 +31,13 @@ public class DeviceList extends AppCompatActivity {
     private ListView listView;
     BluetoothAdapter mBluetoothAdapter;
 
+    Handler mHandler;
+    volatile boolean isActive = false;
+
     Set<BluetoothDevice> brewtoothServers;
 
     final int REQUEST_ENABLE_BT = 1;
-    private ArrayList<BrewMachine> test = new ArrayList<BrewMachine>();
+    private ArrayList<BrewMachine> brewMachines = new ArrayList<BrewMachine>();
     BrewMachineAdapter adapter;
 
     @Override
@@ -50,7 +45,7 @@ public class DeviceList extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_list);
 
-        adapter = new BrewMachineAdapter(this, test);
+        adapter = new BrewMachineAdapter(this, brewMachines);
 
         listView = (ListView)findViewById(R.id.listview_devices);
         listView.setAdapter(adapter);
@@ -59,7 +54,7 @@ public class DeviceList extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapter, View view, int position, long arg) {
                 Intent appInfo = new Intent(DeviceList.this, BrewActivity.class);
-                curBrewMachine = test.get(position);
+                curBrewMachine = brewMachines.get(position);
                 startActivity(appInfo);
             }
         });
@@ -87,21 +82,31 @@ public class DeviceList extends AppCompatActivity {
     }
 
     private void queryServers(){
-        test.clear();
-        adapter.notifyDataSetChanged();
+        Log.i("Brewtooth", "Querying servers...");
 
         new Thread(new Runnable() {
             public void run() {
+                final ArrayList<BrewMachine> futureBrewMachines = new ArrayList<BrewMachine>();
+                if(mHandler != null && isActive) {
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            queryServers();
+                        }
+                    }, 10000);  //Rerun in 10 seconds
+                }
                 for (BluetoothDevice device : brewtoothServers) {
                     //connect to device
                     BluetoothSocket tmp = null;
+                    InputStream tmpi = null;
+                    OutputStream tmpo = null;
 
                     try {
-                        tmp = device.createRfcommSocketToServiceRecord(UUID.fromString("52993379-2ab4-4b4f-9bce-535bc1324c85"));
+                        tmp = device.createInsecureRfcommSocketToServiceRecord(UUID.fromString("52993379-2ab4-4b4f-9bce-535bc1324c85"));
                         tmp.connect();
 
-                        InputStream tmpi = tmp.getInputStream();
-                        OutputStream tmpo = tmp.getOutputStream();
+                        tmpi = tmp.getInputStream();
+                        tmpo = tmp.getOutputStream();
                         int machineCount = 0;
 
                         byte[] buffer = new byte[1024];  // buffer store for the stream
@@ -166,13 +171,7 @@ public class DeviceList extends AppCompatActivity {
                                     brewMachine.mBluetoothDevice = device;
                                     brewMachine.deviceID = jsonObject.getInt("Machine");
 
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            test.add(brewMachine);
-                                            adapter.notifyDataSetChanged();
-                                        }
-                                    });
+                                    futureBrewMachines.add(brewMachine);
                                 }
                             }
                             catch(JSONException e){
@@ -187,10 +186,21 @@ public class DeviceList extends AppCompatActivity {
                     finally {
                         try {
                             if (tmp != null) tmp.close();
+                            if (tmpi != null) tmpi.close();
+                            if (tmpo != null) tmpo.close();
                         }
                         catch (IOException e){}
                     }
                 }
+                //Swap in new buffer
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        brewMachines.clear();
+                        brewMachines.addAll(futureBrewMachines);
+                        adapter.notifyDataSetChanged();
+                    }
+                });
             }
         }).start();
 
@@ -210,8 +220,8 @@ public class DeviceList extends AppCompatActivity {
     @Override
     protected void onResume(){
         super.onResume();
+        isActive = true;
 
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         // Ensures Bluetooth is available on the device and it is enabled. If not,
         // displays a dialog requesting user permission to enable Bluetooth.
         if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
@@ -219,8 +229,25 @@ public class DeviceList extends AppCompatActivity {
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
         else{
-            startScan();
+            if(brewtoothServers == null) startScan();
             queryServers();
         }
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+        isActive = false;
+        mHandler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    protected void onStart(){
+        super.onStart();
+
+        mHandler = new Handler();
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
     }
 }

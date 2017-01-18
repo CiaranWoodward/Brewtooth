@@ -2,6 +2,7 @@ package uk.ac.soton.ecs.ciaran.brewtooth;
 
 import android.animation.ObjectAnimator;
 import android.bluetooth.BluetoothSocket;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -87,37 +88,30 @@ public class BrewActivity extends AppCompatActivity {
 
     @Override
     protected void onStart(){
+        super.onStart();
         mBrewMachine = DeviceList.curBrewMachine;
 
-        try {
-            mSocket = mBrewMachine.mBluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("52993379-2ab4-4b4f-9bce-535bc1324c85"));
-            mSocket.connect();
-
-            inStr = mSocket.getInputStream();
-            outStr = mSocket.getOutputStream();
-
-            mReader = new readerThread(inStr);
-            mWorker = new Thread(mReader);
-            mWorker.start();
-        } catch (IOException e) {
-            //TODO: Recover gracefully
-            e.printStackTrace();
-        }
-
-        sendFeatureListRequest();
-        sendLevelRequest();
+        mReader = new readerThread(inStr);
+        mWorker = new Thread(mReader);
+        mWorker.start();
     }
 
     @Override
     protected void onStop(){
+        super.onStop();
+        Log.d("Brewtooth", "Stopping...");
+        try {
+            if(inStr != null) inStr.close();
+            if(outStr != null) outStr.close();
+            mSocket.close();
+        }catch (IOException e){
+            Log.e("Brewtooth", "Problem closing socket");
+        }
         mWorker.interrupt();
         try {
-            mSocket.close();
-            mReader = null;
-        }
-        catch (IOException e){
-            //How could this happen?
-            Log.e("Brewtooth", "Unable to close bluetooth socket");
+            while (mWorker.isAlive() || mSocket.isConnected()) Thread.sleep(10);
+        }catch(InterruptedException e){
+            Log.e("Brewtooth", "Unexpected interruption!");
         }
     }
 
@@ -154,6 +148,15 @@ public class BrewActivity extends AppCompatActivity {
     private View.OnClickListener mBrewButtonListener = new View.OnClickListener() {
         public void onClick(View v) {
             if(initialised) {
+
+                if((mWorker == null) || (!mWorker.isAlive())){
+                    mReader = new readerThread(inStr);
+                    mWorker = new Thread(mReader);
+                    mWorker.start();
+                }
+
+                if(outStr == null)  return;
+
                 try {
                     JSONObject request = new JSONObject();
                     request.put("Request", "MAKE_COFFEE");
@@ -189,27 +192,21 @@ public class BrewActivity extends AppCompatActivity {
             brewButton.setText(R.string.button_brew_text);
         }
         else if(status.equals("NO_CUP")){
-            brewButton.setEnabled(false);
             brewButton.setText(R.string.button_brew_nocup_text);
         }
         else if(status.equals("CLEAN_ME")){
-            brewButton.setEnabled(false);
             brewButton.setText(R.string.button_brew_cleanme_text);
         }
         else if(status.equals("MAINTAIN")){
-            brewButton.setEnabled(false);
             brewButton.setText(R.string.button_brew_maintain_text);
         }
         else if(status.equals("MORE_COFFEE")){
-            brewButton.setEnabled(false);
             brewButton.setText(R.string.button_brew_refillcoffee_text);
         }
         else if(status.equals("MORE_MILK")){
-            brewButton.setEnabled(false);
             brewButton.setText(R.string.button_brew_refillmilk_text);
         }
         else if(status.equals("MORE_WATER")){
-            brewButton.setEnabled(false);
             brewButton.setText(R.string.button_brew_refillwater_text);
         }
     }
@@ -257,8 +254,8 @@ public class BrewActivity extends AppCompatActivity {
     }
 
     void processCoffeeStart(JSONObject jsonObj) throws JSONException{
-        brewButton.setEnabled(false); //Disable button until coffee is done
         if(jsonObj.getString("Status").equals("SUCCESS")) {
+            brewButton.setEnabled(false); //Disable button until coffee is done
             brewButton.setText(R.string.button_brew_brewing_text);
         }
         else{
@@ -276,6 +273,24 @@ public class BrewActivity extends AppCompatActivity {
 
         @Override
         public void run(){
+
+            try {
+                mSocket = mBrewMachine.mBluetoothDevice.createInsecureRfcommSocketToServiceRecord(UUID.fromString("52993379-2ab4-4b4f-9bce-535bc1324c85"));
+                mSocket.connect();
+
+                inStr = mSocket.getInputStream();
+                outStr = mSocket.getOutputStream();
+
+            } catch (IOException e) {
+                //TODO: Recover gracefully
+                e.printStackTrace();
+            }
+            this.in = inStr;
+
+            if(outStr == null || inStr == null) return;
+
+            sendFeatureListRequest();
+            sendLevelRequest();
 
             while(!Thread.currentThread().isInterrupted()) {
                 byte[] buffer = new byte[1024];  // buffer store for the stream
@@ -386,8 +401,25 @@ public class BrewActivity extends AppCompatActivity {
 
                 } catch (IOException e){
                     //Thread interrupted or socket closed. end processing.
+                    try {
+                        Log.i("Brewtooth", "Closing socket...");
+                        mSocket.close();
+                    }
+                    catch (IOException e2){
+                        //How could this happen?
+                        Log.e("Brewtooth", "Unable to close bluetooth socket");
+                    }
                     return;
                 }
+            }
+
+            try {
+                Log.i("Brewtooth", "Closing socket...");
+                mSocket.close();
+            }
+            catch (IOException e){
+                //How could this happen?
+                Log.e("Brewtooth", "Unable to close bluetooth socket");
             }
         }
     }
